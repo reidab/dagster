@@ -3,11 +3,7 @@ import {Box, Colors, Icon, Caption, Subheading, Mono, ConfigTypeSchema, Body} fr
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {
-  ASSET_NODE_FRAGMENT,
-  CurrentMinutesLateTag,
-  freshnessPolicyDescription,
-} from '../asset-graph/AssetNode';
+import {ASSET_NODE_FRAGMENT} from '../asset-graph/AssetNode';
 import {
   displayNameForAssetKey,
   LiveData,
@@ -31,6 +27,7 @@ import {
   metadataForAssetNode,
 } from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
+import {CurrentMinutesLateTag, freshnessPolicyDescription} from './CurrentMinutesLateTag';
 import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
