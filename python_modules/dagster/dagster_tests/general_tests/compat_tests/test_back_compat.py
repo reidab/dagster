@@ -12,7 +12,7 @@ import pendulum
 import pytest
 import sqlalchemy as db
 
-from dagster import AssetKey, AssetMaterialization, Output
+from dagster import op, AssetKey, AssetMaterialization, Output
 from dagster import _check as check
 from dagster import file_relative_path, job
 from dagster._cli.debug import DebugRunPayload
@@ -27,7 +27,6 @@ from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster._core.storage.migration.utils import upgrading_instance
 from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus, RunsFilter
 from dagster._core.storage.tags import REPOSITORY_LABEL_TAG
-from dagster._legacy import execute_pipeline, pipeline, solid
 from dagster._serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster._serdes.serdes import (
     WhitelistMap,
@@ -45,10 +44,14 @@ def _migration_regex(warning, current_revision, expected_revision=None):
     instruction = re.escape("To migrate, run `dagster instance migrate`.")
     if expected_revision:
         revision = re.escape(
-            "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
+            "Database is at revision {}, head is {}.".format(
+                current_revision, expected_revision
+            )
         )
     else:
-        revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
+        revision = "Database is at revision {}, head is [a-z0-9]+.".format(
+            current_revision
+        )
     return "{} {} {}".format(warning, revision, instruction)
 
 
@@ -74,7 +77,9 @@ def _event_log_migration_regex(_run_id, current_revision, expected_revision=None
 
 
 def test_event_log_step_key_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_event_log_migration/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_7_6_pre_event_log_migration/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
@@ -143,7 +148,9 @@ def get_sqlite3_indexes(db_path, table_name):
 
 def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
-    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         # invariant check to make sure migration has not been run yet
 
@@ -155,18 +162,18 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
 
-        @solid
-        def noop_solid(_):
+        @op
+        def noop_op(_):
             pass
 
-        @pipeline
-        def noop_pipeline():
-            noop_solid()
+        @job
+        def noop_job():
+            noop_op()
 
         with pytest.raises(
             (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError)
         ):
-            execute_pipeline(noop_pipeline, instance=instance)
+            noop_job.execute_in_process(instance=instance)
 
         assert len(instance.get_runs()) == 1
 
@@ -185,7 +192,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
         assert run.run_id == run_id
         assert run.pipeline_snapshot_id is None
 
-        result = execute_pipeline(noop_pipeline, instance=instance)
+        result = noop_job.execute_in_process(instance=instance)
 
         assert result.success
 
@@ -200,7 +207,9 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
 
 
 def test_downgrade_and_upgrade():
-    src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         # invariant check to make sure migration has not been run yet
 
@@ -245,7 +254,9 @@ def test_downgrade_and_upgrade():
 
 
 def test_event_log_asset_key_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_7_8_pre_asset_key_migration/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_7_8_pre_asset_key_migration/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(
             test_dir, "history", "runs", "722183e4-119f-4a00-853f-e1257be82ddb.db"
@@ -277,7 +288,9 @@ def instance_from_debug_payloads(payload_files):
 def test_object_store_operation_result_data_new_fields():
     """We added address and version fields to ObjectStoreOperationResultData.
     Make sure we can still deserialize old ObjectStoreOperationResultData without those fields."""
-    instance_from_debug_payloads([file_relative_path(__file__, "0_9_12_nothing_fs_storage.gz")])
+    instance_from_debug_payloads(
+        [file_relative_path(__file__, "0_9_12_nothing_fs_storage.gz")]
+    )
 
 
 def test_event_log_asset_partition_migration():
@@ -297,10 +310,12 @@ def test_event_log_asset_partition_migration():
 
 
 def test_mode_column_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_11_16_pre_add_mode_column/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_11_16_pre_add_mode_column/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
 
-        @pipeline
+        @job
         def _test():
             pass
 
@@ -350,7 +365,9 @@ def test_run_partition_migration():
 
 
 def test_run_partition_data_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         from dagster._core.storage.runs.migration import RUN_PARTITIONS
         from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
@@ -375,21 +392,30 @@ def test_run_partition_data_migration():
 
         # ensure old tag-based reads are working
         assert not run_storage.has_built_index(RUN_PARTITIONS)
-        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 2
+        assert (
+            len(run_storage._get_partition_runs(partition_set_name, partition_name))
+            == 2
+        )
 
         # turn on reads for the partition column, without migrating the data
         run_storage.mark_index_built(RUN_PARTITIONS)
 
         # ensure that no runs are returned because the data has not been migrated
         assert run_storage.has_built_index(RUN_PARTITIONS)
-        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 0
+        assert (
+            len(run_storage._get_partition_runs(partition_set_name, partition_name))
+            == 0
+        )
 
         # actually migrate the data
         run_storage.migrate(force_rebuild_all=True)
 
         # ensure that we get the same partitioned runs returned
         assert run_storage.has_built_index(RUN_PARTITIONS)
-        assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 2
+        assert (
+            len(run_storage._get_partition_runs(partition_set_name, partition_name))
+            == 2
+        )
 
 
 def test_0_10_0_schedule_wipe():
@@ -414,12 +440,16 @@ def test_0_10_0_schedule_wipe():
         assert "jobs" in get_sqlite3_tables(db_path)
         assert "job_ticks" in get_sqlite3_tables(db_path)
 
-        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as upgraded_instance:
+        with DagsterInstance.from_ref(
+            InstanceRef.from_dir(test_dir)
+        ) as upgraded_instance:
             assert len(upgraded_instance.all_instigator_state()) == 0
 
 
 def test_0_10_6_add_bulk_actions_table():
-    src_dir = file_relative_path(__file__, "snapshot_0_10_6_add_bulk_actions_table/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_10_6_add_bulk_actions_table/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")
         assert get_current_alembic_version(db_path) == "0da417ae1b81"
@@ -434,12 +464,16 @@ def test_0_11_0_add_asset_columns():
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
         assert get_current_alembic_version(db_path) == "0da417ae1b81"
-        assert "last_materialization" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+        assert "last_materialization" not in set(
+            get_sqlite3_columns(db_path, "asset_keys")
+        )
         assert "last_run_id" not in set(get_sqlite3_columns(db_path, "asset_keys"))
         assert "asset_details" not in get_sqlite3_tables(db_path)
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
-            assert "last_materialization" in set(get_sqlite3_columns(db_path, "asset_keys"))
+            assert "last_materialization" in set(
+                get_sqlite3_columns(db_path, "asset_keys")
+            )
             assert "last_run_id" in set(get_sqlite3_columns(db_path, "asset_keys"))
             assert "asset_details" in set(get_sqlite3_columns(db_path, "asset_keys"))
 
@@ -454,17 +488,19 @@ def test_rename_event_log_entry():
 
 
 def test_0_12_0_extract_asset_index_cols():
-    src_dir = file_relative_path(__file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_12_0_pre_asset_index_cols/sqlite"
+    )
 
-    @solid
-    def asset_solid(_):
+    @op
+    def asset_op(_):
         yield AssetMaterialization(asset_key=AssetKey(["a"]), partition="partition_1")
         yield AssetMaterialization(asset_key=AssetKey(["b"]))
         yield Output(1)
 
-    @pipeline
-    def asset_pipeline():
-        asset_solid()
+    @job
+    def asset_job():
+        asset_op()
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs", "index.db")
@@ -478,7 +514,7 @@ def test_0_12_0_extract_asset_index_cols():
             storage = instance._event_storage
 
             # make sure that executing the pipeline works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
@@ -487,7 +523,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert not storage.has_asset_key(AssetKey(["a"]))
             assert storage.has_asset_key(AssetKey(["b"]))
 
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
             assert storage.has_asset_key(AssetKey(["a"]))
 
             # wipe and leave asset wiped
@@ -511,7 +547,7 @@ def test_0_12_0_extract_asset_index_cols():
             assert set(old_keys) == set(new_keys)
 
             # make sure that storing assets still works
-            execute_pipeline(asset_pipeline, instance=instance)
+            asset_job.execute_in_process(instance=instance)
 
             # make sure that wiping still works
             storage.wipe_asset(AssetKey(["a"]))
@@ -583,7 +619,9 @@ def test_pipeline_run_status_dagster_run_status():
 
 
 def test_start_time_end_time():
-    src_dir = file_relative_path(__file__, "snapshot_0_13_12_pre_add_start_time_and_end_time")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_13_12_pre_add_start_time_and_end_time"
+    )
     with copy_directory(src_dir) as test_dir:
 
         @job
@@ -641,14 +679,18 @@ def test_external_job_origin_instigator_origin():
             def skip_when_empty(cls):
                 return {"use_ssl"}
 
-        @_whitelist_for_serdes(whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer)
+        @_whitelist_for_serdes(
+            whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer
+        )
         class GrpcServerRepositoryLocationOrigin(
             namedtuple(
                 "_GrpcServerRepositoryLocationOrigin",
                 "host port socket location_name use_ssl",
             ),
         ):
-            def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
+            def __new__(
+                cls, host, port=None, socket=None, location_name=None, use_ssl=None
+            ):
                 return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
                     cls, host, port, socket, location_name, use_ssl
                 )
@@ -695,7 +737,6 @@ def test_external_job_origin_instigator_origin():
         job_name="simple_schedule",
     )
     job_origin_str = serialize_value(job_origin, legacy_env)
-    from dagster._serdes.serdes import _WHITELIST_MAP
 
     job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
     assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
@@ -704,7 +745,9 @@ def test_external_job_origin_instigator_origin():
 
 
 def test_schedule_namedtuple_job_instigator_backcompat():
-    src_dir = file_relative_path(__file__, "snapshot_0_13_19_instigator_named_tuples/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_13_19_instigator_named_tuples/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             states = instance.all_instigator_state()
@@ -713,7 +756,9 @@ def test_schedule_namedtuple_job_instigator_backcompat():
             for state in states:
                 assert state.instigator_type
                 assert state.instigator_data
-                ticks = instance.get_ticks(state.instigator_origin_id, state.selector_id)
+                ticks = instance.get_ticks(
+                    state.instigator_origin_id, state.selector_id
+                )
                 check.is_list(ticks, of_type=InstigatorTick)
                 for tick in ticks:
                     assert tick.tick_data
@@ -790,7 +835,9 @@ def test_legacy_event_log_load():
 
 
 def test_schedule_secondary_index_table_backcompat():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_6_schedule_migration_table/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_14_6_schedule_migration_table/sqlite"
+    )
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
 
@@ -824,10 +871,16 @@ def test_instigators_table_backcompat():
 
 
 def test_jobs_selector_id_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite"
+    )
 
     from dagster._core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster._core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
+    from dagster._core.storage.schedules.schema import (
+        InstigatorsTable,
+        JobTable,
+        JobTickTable,
+    )
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
@@ -876,7 +929,9 @@ def test_jobs_selector_id_migration():
 
 
 def test_tick_selector_index_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite"
+    )
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
@@ -884,19 +939,27 @@ def test_tick_selector_index_migration():
         assert get_current_alembic_version(db_path) == "c892b3fe0a9f"
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
-            assert "idx_tick_selector_timestamp" not in get_sqlite3_indexes(db_path, "job_ticks")
+            assert "idx_tick_selector_timestamp" not in get_sqlite3_indexes(
+                db_path, "job_ticks"
+            )
             instance.upgrade()
-            assert "idx_tick_selector_timestamp" in get_sqlite3_indexes(db_path, "job_ticks")
+            assert "idx_tick_selector_timestamp" in get_sqlite3_indexes(
+                db_path, "job_ticks"
+            )
 
 
 def test_repo_label_tag_migration():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_14_pre_repo_label_tags/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_14_14_pre_repo_label_tags/sqlite"
+    )
 
     with copy_directory(src_dir) as test_dir:
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             job_repo_filter = RunsFilter(
                 job_name="hammer",
-                tags={REPOSITORY_LABEL_TAG: "toys_repository@dagster_test.graph_job_op_toys.repo"},
+                tags={
+                    REPOSITORY_LABEL_TAG: "toys_repository@dagster_test.graph_job_op_toys.repo"
+                },
             )
 
             count = instance.get_runs_count(job_repo_filter)
@@ -916,7 +979,9 @@ def test_add_bulk_actions_columns():
     )
     from dagster._core.storage.runs.schema import BulkActionsTable
 
-    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_14_16_bulk_actions_columns/sqlite"
+    )
 
     with copy_directory(src_dir) as test_dir:
 
@@ -924,8 +989,12 @@ def test_add_bulk_actions_columns():
         assert {"id", "key", "status", "timestamp", "body"} == set(
             get_sqlite3_columns(db_path, "bulk_actions")
         )
-        assert "idx_bulk_actions_action_type" not in get_sqlite3_indexes(db_path, "bulk_actions")
-        assert "idx_bulk_actions_selector_id" not in get_sqlite3_indexes(db_path, "bulk_actions")
+        assert "idx_bulk_actions_action_type" not in get_sqlite3_indexes(
+            db_path, "bulk_actions"
+        )
+        assert "idx_bulk_actions_selector_id" not in get_sqlite3_indexes(
+            db_path, "bulk_actions"
+        )
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
@@ -939,8 +1008,12 @@ def test_add_bulk_actions_columns():
                 "action_type",
                 "selector_id",
             } == set(get_sqlite3_columns(db_path, "bulk_actions"))
-            assert "idx_bulk_actions_action_type" in get_sqlite3_indexes(db_path, "bulk_actions")
-            assert "idx_bulk_actions_selector_id" in get_sqlite3_indexes(db_path, "bulk_actions")
+            assert "idx_bulk_actions_action_type" in get_sqlite3_indexes(
+                db_path, "bulk_actions"
+            )
+            assert "idx_bulk_actions_selector_id" in get_sqlite3_indexes(
+                db_path, "bulk_actions"
+            )
 
             # check data migration
             backfill_count = len(instance.get_backfills())
@@ -997,7 +1070,9 @@ def test_add_bulk_actions_columns():
 
 
 def test_add_kvs_table():
-    src_dir = file_relative_path(__file__, "snapshot_0_14_16_bulk_actions_columns/sqlite")
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_14_16_bulk_actions_columns/sqlite"
+    )
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "history", "runs.db")

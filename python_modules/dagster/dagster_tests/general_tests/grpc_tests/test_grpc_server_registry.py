@@ -4,31 +4,34 @@ import time
 
 import pytest
 
-from dagster import file_relative_path, repository
+from dagster import job, file_relative_path, repository
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
+from dagster._core.host_representation.grpc_server_registry import (
+    ProcessGrpcServerRegistry,
+)
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RegisteredRepositoryLocationOrigin,
 )
-from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
+from dagster._core.host_representation.repository_location import (
+    GrpcServerRepositoryLocation,
+)
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster._legacy import pipeline
 
 
-@pipeline
-def noop_pipeline():
+@job
+def noop_job():
     pass
 
 
 @repository
 def repo():
-    return [noop_pipeline]
+    return [noop_job]
 
 
 @repository
 def other_repo():
-    return [noop_pipeline]
+    return [noop_job]
 
 
 def _can_connect(origin, endpoint):
@@ -129,7 +132,9 @@ def test_process_server_registry():
                 break
 
             if time.time() - start_time > 30:
-                raise Exception("Old Server never died after process manager released it")
+                raise Exception(
+                    "Old Server never died after process manager released it"
+                )
 
             time.sleep(1)
 
@@ -196,7 +201,9 @@ class TestMockProcessGrpcServerRegistry(ProcessGrpcServerRegistry):
         )
 
     def supports_origin(self, repository_location_origin):
-        return isinstance(repository_location_origin, RegisteredRepositoryLocationOrigin)
+        return isinstance(
+            repository_location_origin, RegisteredRepositoryLocationOrigin
+        )
 
     def _get_loadable_target_origin(self, repository_location_origin):
         return self.mocked_loadable_target_origin
