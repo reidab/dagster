@@ -674,11 +674,9 @@ class PendingNodeInvocation:
             input_values=input_values,
         )
 
-        return core_execute_in_process(
-            ephemeral_pipeline=ephemeral_job,
-            run_config=run_config if run_config is not None else {},
+        return ephemeral_job.execute_in_process(
+            run_config=run_config,
             instance=instance,
-            output_capturing_enabled=True,
             raise_on_error=raise_on_error,
             run_id=run_id,
         )
