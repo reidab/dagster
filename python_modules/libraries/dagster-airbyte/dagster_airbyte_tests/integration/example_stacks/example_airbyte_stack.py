@@ -40,7 +40,7 @@ local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
 )
@@ -73,7 +73,7 @@ alt_source_local_json_conn = AirbyteConnection(
     source=alternate_local_json_source,
     destination=local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
 )
@@ -101,7 +101,7 @@ alt_dest_local_json_conn = AirbyteConnection(
     source=local_json_source,
     destination=alternate_local_json_destination,
     stream_config={
-        "my_data_stream": AirbyteSyncMode.FULL_REFRESH_APPEND,
+        "my_data_stream": AirbyteSyncMode.full_refresh_append(),
     },
     normalize_data=False,
 )
