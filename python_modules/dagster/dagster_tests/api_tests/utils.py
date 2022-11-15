@@ -1,11 +1,13 @@
 import sys
 from contextlib import contextmanager
+from typing import Generator
 
 from dagster import file_relative_path
 from dagster._core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     PipelineHandle,
 )
+from dagster._core.host_representation.repository_location import RepositoryLocation
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
@@ -26,7 +28,7 @@ def get_bar_workspace(instance):
 
 
 @contextmanager
-def get_bar_repo_repository_location(instance=None):
+def get_bar_repo_repository_location(instance=None) -> Generator[RepositoryLocation, None, None]:
     loadable_target_origin = LoadableTargetOrigin(
         executable_path=sys.executable,
         python_file=file_relative_path(__file__, "api_tests_repo.py"),
