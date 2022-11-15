@@ -69,7 +69,9 @@ def test_failure_bash_task():
 def test_http_task():
     http_task = SimpleHttpOperator(task_id="http_task", endpoint="foo")
 
-    connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com", conn_type="http")]
+    connections = [
+        Connection(conn_id="http_default", host="https://mycoolwebsite.com", conn_type="http")
+    ]
 
     dagster_op = airflow_operator_to_op(http_task, connections=connections)
 
@@ -115,7 +117,9 @@ def test_capture_op_logs():
 def test_capture_hook_logs():
     http_task = SimpleHttpOperator(task_id="capture_logs_http_task", endpoint="foo")
 
-    connections = [Connection(conn_id="http_default", host="https://mycoolwebsite.com", conn_type="http")]
+    connections = [
+        Connection(conn_id="http_default", host="https://mycoolwebsite.com", conn_type="http")
+    ]
 
     dagster_op = airflow_operator_to_op(http_task, connections=connections)
 

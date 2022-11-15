@@ -54,7 +54,7 @@ setup(
             "WTForms<3.0.0",
             # https://github.com/dagster-io/dagster/issues/3858
             "sqlalchemy>=1.0,<1.4.0",
-            "marshmallow-sqlalchemy<0.26.0"
+            "marshmallow-sqlalchemy<0.26.0",
         ],
     },
     entry_points={

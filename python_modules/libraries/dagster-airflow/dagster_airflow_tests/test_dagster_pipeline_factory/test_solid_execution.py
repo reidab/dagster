@@ -213,7 +213,10 @@ def test_template_task_dag():
         stdout_file.close()
 
         if airflow_version >= "2.0.0":
-            assert file_contents.count("Running command: ['/bin/bash', '-c', 'echo hello dagsir']") == 1
+            assert (
+                file_contents.count("Running command: ['/bin/bash', '-c', 'echo hello dagsir']")
+                == 1
+            )
             assert file_contents.count("Running command: ['/bin/bash', '-c', 'sleep 2']") == 1
         else:
             assert file_contents.count("INFO - Running command: echo hello dagsir\n") == 1

@@ -360,6 +360,7 @@ test_make_repo_inputs = [
     ),
 ]
 
+
 @pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
 @pytest.mark.parametrize(
     "path_and_content_tuples, fn_arg_path, expected_job_names",
@@ -449,7 +450,6 @@ def test_airflow_example_dags(
     exclude_from_execution_tests,
 ):
     repo = make_dagster_repo_from_airflow_example_dags()
-
 
     for job_name in expected_job_names:
         assert repo.name == "airflow_example_dags_repo"

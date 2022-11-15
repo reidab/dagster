@@ -46,12 +46,7 @@ def check_captured_logs(manager, result, execution_date_fmt):
     file_contents = normalize_file_content(stdout_file.read())
     stdout_file.close()
 
-    assert (
-        file_contents.count(
-            "Running command:"
-        )
-        == 1
-    )
+    assert file_contents.count("Running command:") == 1
     assert (
         file_contents.count(
             "command for dt {execution_date_fmt}".format(execution_date_fmt=execution_date_fmt)
