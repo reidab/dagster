@@ -31,18 +31,18 @@ COMPLEX_DAG_FILE_CONTENTS = '''#
 Example Airflow DAG that shows the complex DAG structure.
 """
 import sys
+import pendulum
 
 from airflow import models
 
-from airflow.utils.dates import days_ago
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.python_operator import PythonOperator
-from airflow.utils.helpers import chain
+from airflow.operators.bash import BashOperator
+from airflow.operators.python import PythonOperator
+from airflow.models.baseoperator import chain
 
-default_args = {"start_date": days_ago(1)}
+default_args = {"start_date": pendulum.today('UTC').add(days=-1)}
 
 with models.DAG(
-    dag_id="example_complex", default_args=default_args, schedule_interval=None, tags=['example'],
+    dag_id="example_complex", default_args=default_args, schedule=None, tags=['example'],
 ) as complex_dag:
 
     # Create
@@ -282,26 +282,26 @@ BASH_DAG_FILE_CONTENTS = '''#
 # DAG
 # airflow
 from datetime import timedelta
+import pendulum
 
 from airflow import DAG
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.utils.dates import days_ago
+from airflow.operators.bash import BashOperator
+from airflow.operators.empty import EmptyOperator
 
 args = {
     'owner': 'airflow',
-    'start_date': days_ago(2),
+    'start_date': pendulum.today('UTC').add(days=-2),
 }
 
 bash_dag = DAG(
     dag_id='example_bash_operator',
     default_args=args,
-    schedule_interval='0 0 * * *',
+    schedule='0 0 * * *',
     dagrun_timeout=timedelta(minutes=60),
     tags=['example'],
 )
 
-run_this_last = DummyOperator(task_id='run_this_last', dag=bash_dag,)
+run_this_last = EmptyOperator(task_id='run_this_last', dag=bash_dag,)
 
 # [START howto_operator_bash]
 run_this = BashOperator(task_id='run_after_loop', bash_command='echo 1', dag=bash_dag,)
@@ -325,9 +325,6 @@ also_run_this = BashOperator(
 )
 # [END howto_operator_bash_template]
 also_run_this >> run_this_last
-
-if __name__ == "__main__":
-    bash_dag.cli()
 '''
 
 COMBINED_FILE_CONTENTS = COMPLEX_DAG_FILE_CONTENTS + BASH_DAG_FILE_CONTENTS
@@ -360,7 +357,8 @@ test_make_repo_inputs = [
     ),
 ]
 
-@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
+
+@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "path_and_content_tuples, fn_arg_path, expected_job_names",
     test_make_repo_inputs,
@@ -438,7 +436,7 @@ test_airflow_example_dags_inputs = [
 ]
 
 
-@pytest.mark.skipif(airflow_version >= "2.0.0", reason="requires airflow 1")
+@pytest.mark.skipif(airflow_version < "2.0.0", reason="requires airflow 2")
 @pytest.mark.parametrize(
     "expected_job_names, exclude_from_execution_tests",
     test_airflow_example_dags_inputs,

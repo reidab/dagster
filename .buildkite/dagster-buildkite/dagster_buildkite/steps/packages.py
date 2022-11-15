@@ -397,7 +397,7 @@ LIBRARY_PACKAGES_WITH_CUSTOM_CONFIG: List[PackageSpec] = [
         ],
         pytest_extra_cmds=airflow_extra_cmds,
         pytest_step_dependencies=test_project_depends_fn,
-        pytest_tox_factors=["default", "requiresairflowdb"],
+        pytest_tox_factors=["default", "requiresairflowdb", "airflow1.10.15", "airflow2.4.1"],
     ),
     PackageSpec(
         "python_modules/libraries/dagster-aws",

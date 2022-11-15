@@ -90,7 +90,7 @@ def make_dagster_repo_from_airflow_dag_bag(
 
     use_unique_id = contains_duplicate_task_names(dag_bag, refresh_from_airflow_db)
 
-    pipeline_defs = []
+    job_defs = []
     count = 0
     # To enforce predictable iteration order
     sorted_dag_ids = sorted(dag_bag.dag_ids)
@@ -98,27 +98,25 @@ def make_dagster_repo_from_airflow_dag_bag(
         # Only call Airflow DB via dag_bag.get_dag(dag_id) if refresh_from_airflow_db is True
         dag = dag_bag.dags.get(dag_id) if not refresh_from_airflow_db else dag_bag.get_dag(dag_id)
         if not use_unique_id:
-            pipeline_defs.append(
-                make_dagster_pipeline_from_airflow_dag(
-                    dag=dag,
-                    tags=None,
-                    use_airflow_template_context=use_airflow_template_context,
-                )
+            pipeline_def = make_dagster_pipeline_from_airflow_dag(
+                dag=dag,
+                tags=None,
+                use_airflow_template_context=use_airflow_template_context,
             )
         else:
-            pipeline_defs.append(
-                make_dagster_pipeline_from_airflow_dag(
-                    dag=dag,
-                    tags=None,
-                    use_airflow_template_context=use_airflow_template_context,
-                    unique_id=count,
-                )
+            pipeline_def = make_dagster_pipeline_from_airflow_dag(
+                dag=dag,
+                tags=None,
+                use_airflow_template_context=use_airflow_template_context,
+                unique_id=count,
             )
             count += 1
+        # pass in tags manually because pipeline_def.graph doesn't have it threaded
+        job_defs.append(pipeline_def.graph.to_job(tags={**pipeline_def.tags}))
 
     @repository(name=repo_name)
     def _repo():
-        return pipeline_defs
+        return job_defs
 
     return _repo
 

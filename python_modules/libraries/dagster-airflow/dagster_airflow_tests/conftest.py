@@ -64,6 +64,7 @@ def clean_airflow_home(airflow_home):
 @pytest.fixture(scope="session")
 def dagster_docker_image():
     docker_image = get_test_project_docker_image()
+    docker_image = "dagster/dagster-k8s:latest"
 
     if not IS_BUILDKITE:
         try:
