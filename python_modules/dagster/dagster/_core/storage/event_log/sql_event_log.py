@@ -210,7 +210,7 @@ class SqlEventLogStorage(EventLogStorage):
 
         return entry_values
 
-    def has_asset_event_tags_table(self) -> bool:
+    def supports_add_asset_event_tags(self) -> bool:
         return self.has_table(AssetEventTagsTable.name)
 
     def add_asset_event_tags(
@@ -225,7 +225,7 @@ class SqlEventLogStorage(EventLogStorage):
         check.inst_param(asset_key, "asset_key", AssetKey)
         check.mapping_param(new_tags, "new_tags", key_type=str, value_type=str)
 
-        if not self.has_asset_event_tags_table:
+        if not self.supports_add_asset_event_tags:
             raise DagsterInvalidInvocationError(
                 "In order to add asset event tags, you must run `dagster instance migrate` to "
                 "create the AssetEventTags table."
@@ -291,7 +291,7 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event.step_materialization_data.materialization.tags
         ):
 
-            if not self.has_asset_event_tags_table:
+            if not self.has_table(AssetEventTagsTable.name):
                 raise DagsterInvalidInvocationError(
                     "In order to store multi-dimensional partition information, you must run "
                     "`dagster instance migrate` to create the AssetEventTags table."
