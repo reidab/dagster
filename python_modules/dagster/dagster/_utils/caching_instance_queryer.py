@@ -7,6 +7,7 @@ from dagster._core.definitions.asset_graph import AssetGraph
 from dagster._core.definitions.events import AssetKey, AssetKeyPartitionKey
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.event_log import EventLogRecord, SqlEventLogStorage
+from dagster._core.storage.event_log.sql_event_log import AssetEventTagsTable
 from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
@@ -224,10 +225,10 @@ class CachingInstanceQueryer:
     ):
         event_log_storage = self._instance.event_log_storage
         if (
-            isinstance(event_log_storage, SqlEventLogStorage)
-            and event_log_storage.has_asset_event_tags_table
+            event_log_storage.supports_add_asset_event_tags
             and record.asset_key is not None
             and record.storage_id is not None
+            and record.event_log_entry.timestamp is not None
         ):
             current_known_data = self.get_known_used_data(record.asset_key, record.storage_id)
             known_data = merge_dicts(current_known_data, new_known_data)
@@ -235,7 +236,10 @@ class CachingInstanceQueryer:
                 {key.to_user_string(): value for key, value in known_data.items()}
             )
             event_log_storage.add_asset_event_tags(
-                record, new_tags={USED_DATA_TAG: serialized_times}
+                event_id=record.storage_id,
+                event_timestamp=record.event_log_entry.timestamp,
+                asset_key=record.asset_key,
+                new_tags={USED_DATA_TAG: serialized_times},
             )
 
     def get_known_used_data(
@@ -243,9 +247,8 @@ class CachingInstanceQueryer:
     ) -> Dict[AssetKey, Tuple[Optional[int], Optional[float]]]:
         """Returns the known upstream ids and timestamps stored on the instance"""
         event_log_storage = self._instance.event_log_storage
-        if (
-            isinstance(event_log_storage, SqlEventLogStorage)
-            and event_log_storage.has_asset_event_tags_table
+        if isinstance(event_log_storage, SqlEventLogStorage) and event_log_storage.has_table(
+            AssetEventTagsTable.name
         ):
             # attempt to fetch from the instance asset event tags
             tags_list = event_log_storage.get_event_tags_for_asset(
