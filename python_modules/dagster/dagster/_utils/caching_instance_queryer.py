@@ -226,6 +226,8 @@ class CachingInstanceQueryer:
         if (
             isinstance(event_log_storage, SqlEventLogStorage)
             and event_log_storage.has_asset_event_tags_table
+            and record.asset_key is not None
+            and record.storage_id is not None
         ):
             current_known_data = self.get_known_used_data(record.asset_key, record.storage_id)
             known_data = merge_dicts(current_known_data, new_known_data)
