@@ -247,7 +247,7 @@ class CachingInstanceQueryer:
         ):
             # attempt to fetch from the instance asset event tags
             tags_list = event_log_storage.get_event_tags_for_asset(
-                asset_key=asset_key, event_id=record_id
+                asset_key=asset_key, filter_event_id=record_id
             )
             if len(tags_list) == 0:
                 return {}
