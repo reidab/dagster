@@ -21,7 +21,6 @@ from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.storage.io_manager import IOManager
 from dagster._legacy import (
     InputDefinition,
-    ModeDefinition,
     OutputDefinition,
     build_assets_job,
     execute_pipeline,
@@ -285,58 +284,6 @@ def test_build_input_context_add_input_metadata():
 
     context = build_input_context(op_def=my_op)
     context.add_input_metadata({"foo": "bar"})
-
-
-def test_io_manager_single_partition_materialization():
-
-    entry1 = MetadataEntry("nrows", value=123)
-    entry2 = MetadataEntry("some value", value=3.21)
-
-    class MyIOManager(IOManager):
-        def handle_output(self, context, obj):
-            # store asset
-            yield entry1
-
-        def load_input(self, context):
-            return None
-
-        def get_output_asset_key(self, context):
-            return AssetKey([context.step_key])
-
-    @io_manager
-    def my_io_manager(_):
-        return MyIOManager()
-
-    @solid(output_defs=[OutputDefinition(name="output1")])
-    def solid1(_):
-        return Output(None, "output1")
-
-    @solid(output_defs=[OutputDefinition(name="output2")])
-    def solid2(_, _input1):
-        yield Output(
-            7,
-            "output2",
-            metadata_entries=[entry2],
-        )
-
-    @pipeline(mode_defs=[ModeDefinition(resource_defs={"io_manager": my_io_manager})])
-    def my_pipeline():
-        solid2(solid1())
-
-    result = execute_pipeline(my_pipeline)
-    events = result.step_event_list
-    materializations = [
-        event for event in events if event.event_type_value == "ASSET_MATERIALIZATION"
-    ]
-    assert len(materializations) == 2
-
-    check_materialization(materializations[0], AssetKey(["solid1"]), metadata_entries=[entry1])
-    check_materialization(
-        materializations[1],
-        AssetKey(["solid2"]),
-        metadata_entries=[entry1, entry2],
-        parent_assets=[AssetLineageInfo(AssetKey(["solid1"]))],
-    )
 
 
 def test_partition_specific_fails_on_na_partitions():
